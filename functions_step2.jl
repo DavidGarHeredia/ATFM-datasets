@@ -4,7 +4,7 @@ struct Point
     y::Float64;
 end
 
-function create_sector_and_route_information!(input, DF_airports::DataFrame)
+function create_sector_and_route_information!(input::Input, DF_airports::DataFrame)
   # Aiports
   xmin, xmax, ymin, ymax = get_extreme_points(DF_airports);
   Δcol = (xmax - xmin)/input.I_numCol; # size of each column in the grid
@@ -37,7 +37,12 @@ function get_extreme_points(DF_airports::DataFrame)
   return xmin, xmax, ymin, ymax;
 end
 
-function assign_sectors_to_airports!(DF_airports::DataFrame, input, xmin, Δcol, ymax, Δrow)
+function assign_sectors_to_airports!(DF_airports::DataFrame, 
+                                     input::Input, 
+                                     xmin::Float64, 
+                                     Δcol::Float64, 
+                                     ymax::Float64, 
+                                     Δrow::Float64)
   posNewColumn = ncol(DF_airports) + 1;
   # The map is a grid, so each airport will be assigned as a sector the number of
   # the grid where it is. This is computed as follows: 
@@ -48,7 +53,12 @@ function assign_sectors_to_airports!(DF_airports::DataFrame, input, xmin, Δcol,
   return nothing;
 end
 
-function create_coordinates_inner_nodes(input, xmin, xmax, ymax, Δrow, Δcol)
+function create_coordinates_inner_nodes(input::Input, 
+                                        xmin::Float64, 
+                                        xmax::Float64, 
+                                        ymax::Float64, 
+                                        Δrow::Float64, 
+                                        Δcol::Float64)
   # The frame formed by (xmin, ymin), (xmin, ymax), (xmax, ymin), (xmax, ymax)
   # will be divided into sectors of size: Δcol × Δrow.
   # For each sector, we will have 9 points: 4 in the vertexes, 4 in the edges and
@@ -85,7 +95,11 @@ function create_coordinates_inner_nodes(input, xmin, xmax, ymax, Δrow, Δcol)
   return pointsMiddle;
 end
 
-function create_graph_of_routes(input, DF_airports, pointsMiddle, Δrow, Δcol)
+function create_graph_of_routes(input::Input, 
+                                DF_airports::DataFrame, 
+                                pointsMiddle::Array{Point, 1}, 
+                                Δrow::Float64, 
+                                Δcol::Float64)
   # We connect the middle inner nodes, with all the outer nodes
   # that are in the SAME sector. That is, we are going to obtain the following 8 arcs:
   #   a    b    c
@@ -102,7 +116,7 @@ function create_graph_of_routes(input, DF_airports, pointsMiddle, Δrow, Δcol)
   return DF_graph, dictAirportNode;
 end
 
-function create_empty_graph(nMiddlePoints)
+function create_empty_graph(nMiddlePoints::Int)
   DF_graph = DataFrame(nArc   = zeros(Int, 8*nMiddlePoints), # number of the arc
                        tail   = zeros(Int, 8*nMiddlePoints),
                        head   = zeros(Int, 8*nMiddlePoints),
@@ -112,7 +126,11 @@ function create_empty_graph(nMiddlePoints)
   return DF_graph;
 end
 
-function fill_df_graph_with_connections!(input, DF_graph, pointsMiddle, Δrow, Δcol)
+function fill_df_graph_with_connections!(input::Input, 
+                                         DF_graph::DataFrame, 
+                                         pointsMiddle::Array{Point,1}, 
+                                         Δrow::Float64, 
+                                         Δcol::Float64)
 
   # We will need the following Dict when adding the airports' connections.
   # It will contain the outer nodes of each sector
@@ -161,7 +179,9 @@ function fill_df_graph_with_connections!(input, DF_graph, pointsMiddle, Δrow, �
   return dictSectorPoints;
 end
 
-function fill_df_graph_with_airports_connections!(dictSectorPoints, DF_graph, DF_airports)
+function fill_df_graph_with_airports_connections!(dictSectorPoints::Dict{Int, Array{Point, 1}}, 
+                                                  DF_graph::DataFrame, 
+                                                  DF_airports::DataFrame)
   local R = 6371; # km of Earth radius: for haversine distance
 
   dictAirportNode = Dict{Int, Int}(); # number of node assigned to each airport
