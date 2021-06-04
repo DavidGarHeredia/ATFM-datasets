@@ -1,5 +1,5 @@
 
-function create_rhs(DF_3droutes::DataFrame, parameters)
+function create_rhs(DF_3droutes::DataFrame, parameters::Parameters)
   matrixSectTime = create_base_scenario(DF_3droutes, parameters);
   # penlize_base_scenario!(matrixSectTime); # Habra parametros 3 base: none, medium, difficult
   # penalize_simulating_bad_weather!(matrixSectTime); # (blo) Habra parametros!!!
@@ -8,14 +8,42 @@ function create_rhs(DF_3droutes::DataFrame, parameters)
   return DF_rhs;
 end
 
-function create_base_scenario(DF_3droutes, parameters)
+function create_base_scenario(DF_3droutes::DataFrame, parameters::Parameters)
   matrixSectTime, dictPhaseSectorPosition = create_matrix_of_sector_usage(DF_3droutes);
   assign_base_values!(matrixSectTime, dictPhaseSectorPosition, Val(parameters.baseValuesRule));
-  # add_join_capacity_constraints!(matrixSectTime, dictPhaseSectorPosition);
-  # SOLO PARA CUANDO TENGO EL DEPARTURE Y ARRIVAL AIRPORT!!!
+  add_join_capacity_constraints!(matrixSectTime, dictPhaseSectorPosition, parameters.reductionFactor);
+  return matrixSectTime
 end
 
-function assign_base_values!(matrixSectTime::Array{Int,2}, dictPhaseSectorPosition, ::Val{:default})
+function add_join_capacity_constraints!(matrixSectTime::Array{Int,2}, 
+                                        dictPhaseSectorPosition::Dict{String, Int},
+                                        reductionFactor::Float64)
+    sectLand = Set{String}();
+    sectDep  = Set{String}();
+    for k in keys(dictPhaseSectorPosition)
+      if k[1] == 'l'
+        push!(sectLand, k[6:end])
+      elseif k[1] == 'd'
+        push!(sectDep, k[5:end])
+      end
+    end
+    sectJoint = intersect(sectLand, sectDep);
+    nCols = size(matrixSectTime)[2];
+    nRows = length(sectJoint);
+    matrixJoint = zeros(Int, nRows, nCols);
+    for (idx, sector) in enumerate(sectJoint)
+      posDep  = dictPhaseSectorPosition["dep/"*sector];
+      posLand = dictPhaseSectorPosition["land/"*sector];
+      valDep  = matrixSectTime[posDep,1];
+      valLand = matrixSectTime[posLand,1];
+      matrixJoint[i,:] .= ceil(Int, reductionFactor*(valDep+valLand));
+    end
+    matrixSectTime = vcat(matrixSectTime, matrixJoint);
+end
+
+function assign_base_values!(matrixSectTime::Array{Int,2}, 
+                             dictPhaseSectorPosition::Dict{String, Int}, 
+                             ::Val{:default})
   nAir, nDep, nLand = compute_total_number_of_elements_in_each_category(dictPhaseSectorPosition);
 
   airValues = zeros(Int, nAir); landValues = zeros(Int, nLand); depValues = zeros(Int, nDep);
@@ -29,8 +57,10 @@ function assign_base_values!(matrixSectTime::Array{Int,2}, dictPhaseSectorPositi
 end
 
 function assign_trimmed_means_as_minimum_values!(matrixSectTime::Array{Int,2}, 
-                                                 dictPhaseSectorPosition, 
-                                                 trimAir, trimLand, trimDep)
+                                                 dictPhaseSectorPosition::Dict{String, Int}, 
+                                                 trimAir::Int, 
+                                                 trimLand::Int, 
+                                                 trimDep::Int)
   for (k, i) in dictPhaseSectorPosition
     minimumValue = 0
     if k[1] == 'l'
@@ -47,7 +77,10 @@ function assign_trimmed_means_as_minimum_values!(matrixSectTime::Array{Int,2},
   end
 end
 
-function compute_trimmed_mean!(airValues, landValues, depValues, percentage)
+function compute_trimmed_mean!(airValues::Array{Int,1}, 
+                               landValues::Array{Int,1}, 
+                               depValues,::Array{Int,1},
+                               percentage::Float64)
   sort!(airValues); sort!(landValues); sort!(depValues);
   nAir  = ceil(Int, length(airValues)*percentage/2);
   nDep  = ceil(Int, length(depValues)*percentage/2);
@@ -61,9 +94,10 @@ function compute_trimmed_mean!(airValues, landValues, depValues, percentage)
 end
 
 function compute_base_values!(matrixSectTime::Array{Int,2}, 
-                              dictPhaseSectorPosition, 
-                              airValues, landValues, depValues)
-  nrows, ncols = size(matrixSectTime);
+                              dictPhaseSectorPosition::Dict{String, Int}, 
+                              airValues::Array{Int,1}, 
+                              landValues::Array{Int,1}, 
+                              depValues,::Array{Int,1})
   idxAir = idxLand = idxDep = 1;
   for (k, i) in dictPhaseSectorPosition
     maxVal = maximum(matrixSectTime[i,:]);
@@ -82,7 +116,7 @@ function compute_base_values!(matrixSectTime::Array{Int,2},
 end
 
 # The categories are: air, land, departure
-function compute_total_number_of_elements_in_each_category(dictPhaseSectorPosition)
+function compute_total_number_of_elements_in_each_category(dictPhaseSectorPosition::Dict{String,Int})
   nAir = nDep = nLand = 0;
   for k in keys(dictPhaseSectorPosition)
     if k[1] == 'l'
