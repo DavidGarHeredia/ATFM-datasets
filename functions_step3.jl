@@ -125,9 +125,10 @@ function create_alternative_3droutes(DF_flights::DataFrame,
     return DF_3d;
 end
 
-function get_K_more_used_sectors(DF_3droutes::DataFrame, input::Input,
-                                network::MetaGraph{Int64,Float64},
-                                dictAirportNode::Dict{Int64,Int64})
+function get_K_more_used_sectors(DF_3droutes::DataFrame, 
+                                 input::Input,
+                                 network::MetaGraph{Int64,Float64},
+                                 dictAirportNode::Dict{Int64,Int64})
 
     # Usage of sectors without considering the airports
     nodeIsAirport = Dict(n => true for n in values(dictAirportNode));
@@ -154,7 +155,8 @@ function get_K_more_used_sectors(DF_3droutes::DataFrame, input::Input,
     return dictSectArcs;
 end
 
-function get_flights_using_busy_sectors(DF_3droutes::DataFrame, dictSectArcs,
+function get_flights_using_busy_sectors(DF_3droutes::DataFrame, 
+                                        dictSectArcs,
                                         dictAirportNode::Dict{Int64,Int64})
 
     # get flights that used at least one of the busy sectors
@@ -256,8 +258,8 @@ end
 
 # Returns a df row with all the information filled except for the time dimension
 function fill_3dRoute_spatial(f::DataFrameRow{DataFrame,DataFrames.Index},
-                            tail::Int, head::Int, route::Int,
-                            phase::String, sector::String, seq::Int, cost::Int)
+                              tail::Int, head::Int, route::Int, phase::String, 
+                              sector::String, seq::Int, cost::Int)
     df =  DataFrame(net    = f[:Tail_Number],
                     flight = f[:flight],
                     seq    = seq,
@@ -281,7 +283,7 @@ end
 # traverse (e.g, a -> b -> c -> d), this function sets the arrival time to each
 # node by adding the beginning time (bt) to the traversal time. Info about
 # delays/increases is also added.
-function add_time_info!(DF_aux::DataFrame, t0, input::Input)
+function add_time_info!(DF_aux::DataFrame, t0::Int, input::Input)
     bt = t0;
     for r in eachrow(DF_aux)
         r[:bt] = bt;
