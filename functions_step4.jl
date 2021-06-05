@@ -11,13 +11,16 @@ end
 function create_base_scenario(DF_3droutes::DataFrame, parameters::Parameters)
   matrixSectTime, dictPhaseSectorPosition = create_matrix_of_sector_usage(DF_3droutes);
   assign_base_values!(matrixSectTime, dictPhaseSectorPosition, Val(parameters.baseValuesRule));
-  add_join_capacity_constraints!(matrixSectTime, dictPhaseSectorPosition, parameters.reductionFactor);
-  return matrixSectTime
+  matrixJoin, dictJoin = get_join_capacity_constraints(matrixSectTime, 
+                            dictPhaseSectorPosition, parameters.reductionFactor);
+  matrix = vcat(matrixSectTime, matrixJoin) 
+  dict   = merge(dictPhaseSectorPosition, dictJoin);
+  return matrix, dict
 end
 
-function add_join_capacity_constraints!(matrixSectTime::Array{Int,2}, 
-                                        dictPhaseSectorPosition::Dict{String, Int},
-                                        reductionFactor::Float64)
+function get_join_capacity_constraints(matrixSectTime::Array{Int,2}, 
+                                       dictPhaseSectorPosition::Dict{String, Int},
+                                       reductionFactor::Float64)
     sectLand = Set{String}();
     sectDep  = Set{String}();
     for k in keys(dictPhaseSectorPosition)
@@ -27,18 +30,20 @@ function add_join_capacity_constraints!(matrixSectTime::Array{Int,2},
         push!(sectDep, k[5:end])
       end
     end
-    sectJoint = intersect(sectLand, sectDep);
+    sectJoin = intersect(sectLand, sectDep);
+    position1 = size(matrixSectTime)[1];
+    dictJoin = Dict("join/"*s => position1+idx for (idx, s) in enumerate(sectJoin));
     nCols = size(matrixSectTime)[2];
-    nRows = length(sectJoint);
+    nRows = length(sectJoin);
     matrixJoint = zeros(Int, nRows, nCols);
-    for (idx, sector) in enumerate(sectJoint)
+    for (idx, sector) in enumerate(sectJoin)
       posDep  = dictPhaseSectorPosition["dep/"*sector];
       posLand = dictPhaseSectorPosition["land/"*sector];
       valDep  = matrixSectTime[posDep,1];
       valLand = matrixSectTime[posLand,1];
-      matrixJoint[i,:] .= ceil(Int, reductionFactor*(valDep+valLand));
+      matrixJoint[idx,:] .= floor(Int, reductionFactor*(valDep+valLand));
     end
-    matrixSectTime = vcat(matrixSectTime, matrixJoint);
+    return matrixJoint, dictJoin;
 end
 
 function assign_base_values!(matrixSectTime::Array{Int,2}, 
@@ -79,7 +84,7 @@ end
 
 function compute_trimmed_mean!(airValues::Array{Int,1}, 
                                landValues::Array{Int,1}, 
-                               depValues,::Array{Int,1},
+                               depValues::Array{Int,1},
                                percentage::Float64)
   sort!(airValues); sort!(landValues); sort!(depValues);
   nAir  = ceil(Int, length(airValues)*percentage/2);
@@ -97,7 +102,7 @@ function compute_base_values!(matrixSectTime::Array{Int,2},
                               dictPhaseSectorPosition::Dict{String, Int}, 
                               airValues::Array{Int,1}, 
                               landValues::Array{Int,1}, 
-                              depValues,::Array{Int,1})
+                              depValues::Array{Int,1})
   idxAir = idxLand = idxDep = 1;
   for (k, i) in dictPhaseSectorPosition
     maxVal = maximum(matrixSectTime[i,:]);
