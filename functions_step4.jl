@@ -1,11 +1,38 @@
 
 function create_rhs(DF_3droutes::DataFrame, parameters::Parameters)
-  matrixSectTime = create_base_scenario(DF_3droutes, parameters);
+  matrixSectTime, dictPhaseSectorPosition = create_base_scenario(DF_3droutes, parameters);
+  dictSectorAirports, dictSectorSectors = get_relationships_for_penalizing(DF_3droutes)
   # penlize_base_scenario!(matrixSectTime); # Habra parametros 3 base: none, medium, difficult
   # penalize_simulating_bad_weather!(matrixSectTime); # (blo) Habra parametros!!!
+  # Dont forget to penalize airports (dep and arr) and join capacity constraints
   # TODO: garantizar una cap min de 1
   # DF_rhs = transform_matrix_to_data_frame();
   return DF_rhs;
+end
+
+is_an_airport(sector::String)= sector[1] == 'A';
+
+# TODO: test this function
+function get_relationships_for_penalizing(DF_3droutes::DataFrame)
+  dictSectorAirports = Dict{String, Array{String}}();
+  dictSectorSectors  = Dict{String, Array{String}}();
+  N = nrow(DF_3droutes)-1
+  for i in 2:N
+    sector = DF_3droutes[i,:sector];
+    if !is_an_airport(sector)
+      next_sector = DF_3droutes[i+1,:sector];
+      if is_an_airport(next_sector)
+        push!(dictSectorAirports[sector], next_sector);
+      else
+        push!(dictSectorSectors[sector], next_sector);
+      end
+      prev_sector = DF_3droutes[i-1,:sector];
+      if is_an_airport(prev_sector)
+        push!(dictSectorAirports[sector], prev_sector);
+      else
+        push!(dictSectorSectors[sector], prev_sector);
+      end
+  end
 end
 
 function create_base_scenario(DF_3droutes::DataFrame, parameters::Parameters)
