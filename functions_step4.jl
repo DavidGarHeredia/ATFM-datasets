@@ -10,6 +10,37 @@ function create_rhs(DF_3droutes::DataFrame, parameters::Parameters)
   # return DF_rhs;
 end
 
+# TODO: test these 2 new functions
+function get_row_indexes_base_penalization(dictPhaseSectorPosition::Dict{String, Int},
+                                           percentageSectorsWithBasePenalization::Float64)
+  rowIndexes = Array{Int}();
+  for (phaseSector, position) in dictPhaseSectorPosition
+    if phaseSector[1] == 'a' # air, i.e, not airport
+      if rand() < percentageSectorsWithBasePenalization
+        push!(rowIndexes, position)
+      end
+    end
+  end
+  return rowIndexes;
+end
+
+function penalize_base_scenario!(matrixSectTime::Array{Int,2},
+                                 dictPhaseSectorPosition::Dict{String,Int},
+                                 dictSectorAirports::Dict{String, Set{String}}, 
+                                 parameters::Parameters)
+  rowIndexesToPenalize = get_row_indexes_base_penalization(dictPhaseSectorPosition,
+                                parameters.percentageSectorsWithBasePenalization)
+  for idx in rowIndexesToPenalize
+    penalization = parameters.lbBasePenalization + rand()*parameters.ubBasePenalization
+    matrixSectTime[idx,:] .= ceil.(Int, penalization*matrixSectTime[idx,:])
+    # TODO: CHECK THE AIRPORT OF THAT SECTOR and penalize it
+      # remove word "air" and obtain sector
+      # get airports of that sector
+      # build d/Airport, l/Airport and join/Airport 
+      # get the rows and penalize them 
+  end
+end
+
 is_an_airport(sector::String)= sector[1] == 'A';
 
 function add_element_to_dict!(dict::Dict{String, Set{String}}, 
@@ -43,7 +74,7 @@ end
 
 function create_base_scenario(DF_3droutes::DataFrame, parameters::Parameters)
   matrixSectTime, dictPhaseSectorPosition = create_matrix_of_sector_usage(DF_3droutes);
-  assign_base_values!(matrixSectTime, dictPhaseSectorPosition, Val(parameters.baseValuesRule));
+  assign_base_values!(matrixSectTime, dictPhaseSectorPosition);
   matrixJoin, dictJoin = get_join_capacity_constraints(matrixSectTime, 
                             dictPhaseSectorPosition, parameters.reductionFactor);
   matrix = vcat(matrixSectTime, matrixJoin) 
@@ -80,8 +111,7 @@ function get_join_capacity_constraints(matrixSectTime::Array{Int,2},
 end
 
 function assign_base_values!(matrixSectTime::Array{Int,2}, 
-                             dictPhaseSectorPosition::Dict{String, Int}, 
-                             ::Val{:default})
+                             dictPhaseSectorPosition::Dict{String, Int})
   nAir, nDep, nLand = compute_total_number_of_elements_in_each_category(dictPhaseSectorPosition);
 
   airValues = zeros(Int, nAir); landValues = zeros(Int, nLand); depValues = zeros(Int, nDep);
