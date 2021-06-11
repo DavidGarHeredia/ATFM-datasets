@@ -7,32 +7,38 @@ function create_rhs(DF_3droutes::DataFrame, parameters::Parameters)
   # Dont forget to penalize airports (dep and arr) and join capacity constraints
   # TODO: garantizar una cap min de 1
   # DF_rhs = transform_matrix_to_data_frame();
-  return DF_rhs;
+  # return DF_rhs;
 end
 
 is_an_airport(sector::String)= sector[1] == 'A';
 
-# TODO: test this function
+function add_element_to_dict!(dict::Dict{String, Set{String}}, 
+                              sector::String,
+                              newSector::String)
+  if !haskey(dict, sector)
+    dict[sector] = Set{String}()
+  end
+  push!(dict[sector], newSector)
+end
+
 function get_relationships_for_penalizing(DF_3droutes::DataFrame)
-  dictSectorAirports = Dict{String, Array{String}}();
-  dictSectorSectors  = Dict{String, Array{String}}();
+  dictSectorAirports = Dict{String, Set{String}}();
+  dictSectorSectors  = Dict{String, Set{String}}();
   N = nrow(DF_3droutes)-1
   for i in 2:N
     sector = DF_3droutes[i,:sector];
     if !is_an_airport(sector)
-      next_sector = DF_3droutes[i+1,:sector];
-      if is_an_airport(next_sector)
-        push!(dictSectorAirports[sector], next_sector);
-      else
-        push!(dictSectorSectors[sector], next_sector);
+      for idx in [-1,1] # -1 prev sector, +1 next one
+        newSector = DF_3droutes[i+idx,:sector];
+        if is_an_airport(newSector)
+          add_element_to_dict!(dictSectorAirports, sector, newSector);
+        else
+          add_element_to_dict!(dictSectorSectors, sector, newSector);
+        end
       end
-      prev_sector = DF_3droutes[i-1,:sector];
-      if is_an_airport(prev_sector)
-        push!(dictSectorAirports[sector], prev_sector);
-      else
-        push!(dictSectorSectors[sector], prev_sector);
-      end
+    end
   end
+  return dictSectorAirports, dictSectorSectors
 end
 
 function create_base_scenario(DF_3droutes::DataFrame, parameters::Parameters)
