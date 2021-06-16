@@ -11,33 +11,40 @@ function create_rhs(DF_3droutes::DataFrame, parameters::Parameters)
 end
 
 # TODO: test these 2 new functions
-function get_row_indexes_base_penalization(dictPhaseSectorPosition::Dict{String, Int},
-                                           percentageSectorsWithBasePenalization::Float64)
+function get_sectors_and_indexes_base_penalization(dictPhaseSectorPosition::Dict{String, Int},
+                                 percentageSectorsWithBasePenalization::Float64)
   rowIndexes = Array{Int}();
+  sectors = Array{String}();
   for (phaseSector, position) in dictPhaseSectorPosition
     if phaseSector[1] == 'a' # air, i.e, not airport
       if rand() < percentageSectorsWithBasePenalization
         push!(rowIndexes, position)
+        push!(sectors, phaseSector[5:end]) # TODO: check that 5:end gives the sector name
       end
     end
   end
-  return rowIndexes;
+  return sectors, rowIndexes;
 end
 
 function penalize_base_scenario!(matrixSectTime::Array{Int,2},
                                  dictPhaseSectorPosition::Dict{String,Int},
                                  dictSectorAirports::Dict{String, Set{String}}, 
                                  parameters::Parameters)
-  rowIndexesToPenalize = get_row_indexes_base_penalization(dictPhaseSectorPosition,
+  sectorsToPenalize, rowIndexesToPenalize = 
+            get_sectors_and_indexes_base_penalization(dictPhaseSectorPosition,
                                 parameters.percentageSectorsWithBasePenalization)
   for idx in rowIndexesToPenalize
     penalization = parameters.lbBasePenalization + rand()*parameters.ubBasePenalization
     matrixSectTime[idx,:] .= ceil.(Int, penalization*matrixSectTime[idx,:])
-    # TODO: CHECK THE AIRPORT OF THAT SECTOR and penalize it
-      # remove word "air" and obtain sector
-      # get airports of that sector
-      # build d/Airport, l/Airport and join/Airport 
-      # get the rows and penalize them 
+    sector = sectorsToPenalize[idx]
+    airportsInSector = dictSectorAirports[sector]
+    for a in airportsInSector
+      posDep  = dictPhaseSectorPosition["dep/"*a]
+      posLand = dictPhaseSectorPosition["land/"*a]
+      posJoin = dictPhaseSectorPosition["join/"*a]
+      matrixSectTime[posDep,:]  .= ceil.(Int, penalization*matrixSectTime[posDep,:])
+      matrixSectTime[posLand,:] .= ceil.(Int, penalization*matrixSectTime[posLand,:])
+      matrixSectTime[posJoin,:] .= ceil.(Int, penalization*matrixSectTime[posJoin,:])
   end
 end
 
