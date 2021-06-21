@@ -10,16 +10,15 @@ function create_rhs(DF_3droutes::DataFrame, parameters::Parameters)
   # return DF_rhs;
 end
 
-# TODO: test these 2 new functions
 function get_sectors_and_indexes_base_penalization(dictPhaseSectorPosition::Dict{String, Int},
                                  percentageSectorsWithBasePenalization::Float64)
-  rowIndexes = Array{Int}();
-  sectors = Array{String}();
+  rowIndexes = Array{Int,1}();
+  sectors = Array{String,1}();
   for (phaseSector, position) in dictPhaseSectorPosition
     if phaseSector[1] == 'a' # air, i.e, not airport
       if rand() < percentageSectorsWithBasePenalization
         push!(rowIndexes, position)
-        push!(sectors, phaseSector[5:end]) # TODO: check that 5:end gives the sector name
+        push!(sectors, phaseSector[5:end]) 
       end
     end
   end
@@ -33,18 +32,22 @@ function penalize_base_scenario!(matrixSectTime::Array{Int,2},
   sectorsToPenalize, rowIndexesToPenalize = 
             get_sectors_and_indexes_base_penalization(dictPhaseSectorPosition,
                                 parameters.percentageSectorsWithBasePenalization)
-  for idx in rowIndexesToPenalize
-    penalization = parameters.lbBasePenalization + rand()*parameters.ubBasePenalization
+  for (pos,idx) in enumerate(rowIndexesToPenalize)
+    penalization = parameters.lbBasePenalization + rand()*(parameters.ubBasePenalization-parameters.lbBasePenalization)
     matrixSectTime[idx,:] .= ceil.(Int, penalization*matrixSectTime[idx,:])
-    sector = sectorsToPenalize[idx]
-    airportsInSector = dictSectorAirports[sector]
-    for a in airportsInSector
-      posDep  = dictPhaseSectorPosition["dep/"*a]
-      posLand = dictPhaseSectorPosition["land/"*a]
-      posJoin = dictPhaseSectorPosition["join/"*a]
-      matrixSectTime[posDep,:]  .= ceil.(Int, penalization*matrixSectTime[posDep,:])
-      matrixSectTime[posLand,:] .= ceil.(Int, penalization*matrixSectTime[posLand,:])
-      matrixSectTime[posJoin,:] .= ceil.(Int, penalization*matrixSectTime[posJoin,:])
+    sector = sectorsToPenalize[pos]
+    if haskey(dictSectorAirports, sector)
+      airportsInSector = dictSectorAirports[sector]
+      for a in airportsInSector
+        for operation in ["dep/", "land/", "join/"]
+          key = operation*a
+          if haskey(dictPhaseSectorPosition, key)
+            row = dictPhaseSectorPosition[key]
+            matrixSectTime[row,:] .= ceil.(Int, penalization*matrixSectTime[row,:])
+          end
+        end
+      end
+    end
   end
 end
 
