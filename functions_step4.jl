@@ -2,12 +2,16 @@
 function create_rhs(DF_3droutes::DataFrame, parameters::Parameters)
   matrixSectTime, dictPhaseSectorPosition = create_base_scenario(DF_3droutes, parameters);
   dictSectorAirports, dictSectorSectors = get_relationships_for_penalizing(DF_3droutes)
-  # penlize_base_scenario!(matrixSectTime); # Habra parametros 3 base: none, medium, difficult
+  penlize_base_scenario!(matrixSectTime, dictPhaseSectorPosition, dictSectorAirports, parameters); 
   # penalize_simulating_bad_weather!(matrixSectTime); # (blo) Habra parametros!!!
   # Dont forget to penalize airports (dep and arr) and join capacity constraints
   # TODO: garantizar una cap min de 1
   # DF_rhs = transform_matrix_to_data_frame();
   # return DF_rhs;
+end
+
+function penalize_simulating_bad_weather!()
+
 end
 
 function get_sectors_and_indexes_base_penalization(dictPhaseSectorPosition::Dict{String, Int},
