@@ -6,12 +6,46 @@ function create_rhs(DF_3droutes::DataFrame, parameters::Parameters)
   # penalize_simulating_bad_weather!(matrixSectTime); # (blo) Habra parametros!!!
   # Dont forget to penalize airports (dep and arr) and join capacity constraints
   # TODO: garantizar una cap min de 1
+  set_min_capacity!(matrixSectTime)
   # DF_rhs = transform_matrix_to_data_frame();
   # return DF_rhs;
 end
 
-function penalize_simulating_bad_weather!()
+# TODO: test these 2 new functions 
+function set_min_capacity!(matrixSectTime::Array{Int,2})
+  nRows, nCols = size(matrixSectTime)
+  for j in nCols, i in nRows
+    matrixSectTime[i,j] = max(matrixSectTime[i,j], 1)
+  end
+end
 
+function penalize_simulating_bad_weather!(matrixSectTime::Array{Int,2}, 
+                                  dictSectorSectors::Dict{String, Set{String}},
+                                  dictPhaseSectorPosition::Dict{String, Int},
+                                  dictSectorAirports::Dict{String, Set{String}},
+                                  parameters::Parameters)
+  nCols = size(matrixSectTime)[2]
+  duration = parameters.durationPenalization
+  sector = rand(keys(dictSectorSectors))
+  reduction = parameters.BadWeatherReduction
+  for t0 in 1:duration:nCols
+    for s in union(sector, dictSectorSectors[sector])
+      phaseSector = "air/"*s
+      pos = dictPhaseSectorPosition[phaseSector]
+      matrixSectTime[pos,t0:(t0+duration)] .= ceil.(Int, reduction * matrixSectTime[pos,t0:(t0+duration)])
+      airports = dictSectorAirports[s]
+      for a in airports
+        for operation in ["dep/", "land/", "join/"]
+          key = operation*a
+          if haskey(dictPhaseSectorPosition, key)
+            pos = dictPhaseSectorPosition[key]
+            matrixSectTime[pos,t0:(t0+duration)] .= ceil.(Int, reduction * matrixSectTime[pos,t0:(t0+duration)])
+          end
+        end
+      end
+    end
+    sector = rand(dictSectorSectors[sector])
+  end
 end
 
 function get_sectors_and_indexes_base_penalization(dictPhaseSectorPosition::Dict{String, Int},
