@@ -32,14 +32,14 @@ function penalize_simulating_bad_weather!(matrixSectTime::Array{Int,2},
     for s in union(sector, dictSectorSectors[sector])
       phaseSector = "air/"*s
       pos = dictPhaseSectorPosition[phaseSector]
-      matrixSectTime[pos,t0:(t0+duration)] .= ceil.(Int, reduction * matrixSectTime[pos,t0:(t0+duration)])
+      matrixSectTime[pos,t0:(t0+duration)] .= floor.(Int, reduction * matrixSectTime[pos,t0:(t0+duration)])
       airports = dictSectorAirports[s]
       for a in airports
         for operation in ["dep/", "land/", "join/"]
           key = operation*a
           if haskey(dictPhaseSectorPosition, key)
             pos = dictPhaseSectorPosition[key]
-            matrixSectTime[pos,t0:(t0+duration)] .= ceil.(Int, reduction * matrixSectTime[pos,t0:(t0+duration)])
+            matrixSectTime[pos,t0:(t0+duration)] .= floor.(Int, reduction * matrixSectTime[pos,t0:(t0+duration)])
           end
         end
       end
@@ -72,7 +72,7 @@ function penalize_base_scenario!(matrixSectTime::Array{Int,2},
                                 parameters.percentageSectorsWithBasePenalization)
   for (pos,idx) in enumerate(rowIndexesToPenalize)
     penalization = parameters.lbBasePenalization + rand()*(parameters.ubBasePenalization-parameters.lbBasePenalization)
-    matrixSectTime[idx,:] .= ceil.(Int, penalization*matrixSectTime[idx,:])
+    matrixSectTime[idx,:] .= floor.(Int, penalization*matrixSectTime[idx,:])
     sector = sectorsToPenalize[pos]
     if haskey(dictSectorAirports, sector)
       airportsInSector = dictSectorAirports[sector]
@@ -81,7 +81,7 @@ function penalize_base_scenario!(matrixSectTime::Array{Int,2},
           key = operation*a
           if haskey(dictPhaseSectorPosition, key)
             row = dictPhaseSectorPosition[key]
-            matrixSectTime[row,:] .= ceil.(Int, penalization*matrixSectTime[row,:])
+            matrixSectTime[row,:] .= floor.(Int, penalization*matrixSectTime[row,:])
           end
         end
       end
