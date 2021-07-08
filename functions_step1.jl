@@ -1,13 +1,11 @@
-function clean_data_flights(df_flights_raw::DataFrame, 
-                            weekday::Int, 
-                            territoriesToDelete::Array{String,1}, 
-                            df_airports_raw::DataFrame)::DataFrame
-
-    # Select only flights in the contiguous US
+function remove_flights_in_non_contiguous_USA!(territoriesToDelete::Array{String,1},
+										  	  df_flights_raw::DataFrame)
     contiguousUS = map(x -> x ∉ territoriesToDelte, df_flights_raw.OriginStateName);
     df_flights_raw = df_flights_raw[contiguousUS, :];
+end
 
-    # Filtering observations and selecting only needed columns
+function filter_observation_and_keep_only_useful_columns(df_flights_raw::DataFrame,
+														 weekday::Int)
     df = df_flights_raw |> 
             @filter(_.DayofMonth == weekday) |>
             @filter(_.Cancelled  == 0.0 && _.Diverted == 0.0) |>
@@ -18,20 +16,35 @@ function clean_data_flights(df_flights_raw::DataFrame,
                     ) |>
             @dropna() |>
             DataFrame;
+	return df
+end
 
-    # Remove flights with no aiport in the data set
+function remove_flights_with_no_airport_in_the_data_set(df_airports_raw::DataFrame,
+														df_flights::DataFrame)
     airports = BitSet();
     sizehint!(airports, nrow(df_airports_raw));
     for r in eachrow(df_airports_raw)
         push!(airports, r[:AIRPORT_ID]);
     end
-    df = df |> 
+    df = df_flights |> 
         @filter(_.OriginAirportID in airports && 
                 _.DestAirportID   in airports) |> 
         DataFrame;
-
-    return df;
+	return df
 end
+
+function clean_data_flights(df_flights_raw::DataFrame, 
+                            weekday::Int, 
+                            territoriesToDelete::Array{String,1}, 
+                            df_airports_raw::DataFrame)::DataFrame
+
+	remove_flights_in_non_contiguous_USA!(territoriesToDelete, df_flights_raw);
+	df_flights = filter_observation_and_keep_only_useful_columns(df_flights_raw, weekday);
+	df_final = remove_flights_with_no_airport_in_the_data_set(df_airports_raw, df_flights);
+    return df_final;
+end
+
+# TODO test functions above
 
 function clean_data_airports(df_airports_raw::DataFrame, 
                              df_flights::DataFrame)::DataFrame
