@@ -3,9 +3,8 @@ function create_rhs(DF_3droutes::DataFrame, parameters::Parameters)
   matrixSectTime, dictPhaseSectorPosition = create_base_scenario(DF_3droutes, parameters);
   dictSectorAirports, dictSectorSectors = get_relationships_for_penalizing(DF_3droutes)
   penlize_base_scenario!(matrixSectTime, dictPhaseSectorPosition, dictSectorAirports, parameters); 
-  # penalize_simulating_bad_weather!(matrixSectTime); # (blo) Habra parametros!!!
-  # Dont forget to penalize airports (dep and arr) and join capacity constraints
-  # TODO: garantizar una cap min de 1
+  penalize_simulating_bad_weather!(matrixSectTime, dictSectorSectors, 
+                        dictPhaseSectorPosition, dictSectorSectors, parameters); 
   set_min_capacity!(matrixSectTime)
   # DF_rhs = transform_matrix_to_data_frame();
   # return DF_rhs;
@@ -25,21 +24,22 @@ function penalize_simulating_bad_weather!(matrixSectTime::Array{Int,2},
                                   dictSectorAirports::Dict{String, Set{String}},
                                   parameters::Parameters)
   nCols = size(matrixSectTime)[2]
-  duration = parameters.durationPenalization
+  duration = parameters.periodsOfWeatherPenalization
   sector = rand(keys(dictSectorSectors))
-  reduction = parameters.BadWeatherReduction
+  reduction = parameters.badWeatherReduction
   for t0 in 1:duration:nCols
-    for s in union(sector, dictSectorSectors[sector])
+    for s in union([sector], dictSectorSectors[sector])
       phaseSector = "air/"*s
       pos = dictPhaseSectorPosition[phaseSector]
-      matrixSectTime[pos,t0:(t0+duration)] .= floor.(Int, reduction * matrixSectTime[pos,t0:(t0+duration)])
+      tf = min(t0+duration, nCols)
+      matrixSectTime[pos,t0:tf] .= floor.(Int, reduction * matrixSectTime[pos,t0:tf])
       airports = dictSectorAirports[s]
       for a in airports
         for operation in ["dep/", "land/", "join/"]
           key = operation*a
           if haskey(dictPhaseSectorPosition, key)
             pos = dictPhaseSectorPosition[key]
-            matrixSectTime[pos,t0:(t0+duration)] .= floor.(Int, reduction * matrixSectTime[pos,t0:(t0+duration)])
+            matrixSectTime[pos,t0:tf] .= floor.(Int, reduction * matrixSectTime[pos,t0:tf])
           end
         end
       end
@@ -124,7 +124,7 @@ function create_base_scenario(DF_3droutes::DataFrame, parameters::Parameters)
   matrixSectTime, dictPhaseSectorPosition = create_matrix_of_sector_usage(DF_3droutes);
   assign_base_values!(matrixSectTime, dictPhaseSectorPosition);
   matrixJoin, dictJoin = get_join_capacity_constraints(matrixSectTime, 
-                            dictPhaseSectorPosition, parameters.reductionFactor);
+                            dictPhaseSectorPosition, parameters.reductionFactorJoinConstraints);
   matrix = vcat(matrixSectTime, matrixJoin) 
   dict   = merge(dictPhaseSectorPosition, dictJoin);
   return matrix, dict
@@ -165,7 +165,7 @@ function assign_base_values!(matrixSectTime::Array{Int,2},
   airValues = zeros(Int, nAir); landValues = zeros(Int, nLand); depValues = zeros(Int, nDep);
   compute_base_values!(matrixSectTime, dictPhaseSectorPosition, airValues, landValues, depValues);
 
-  percentage = parameters.percentage;
+  percentage = parameters.percentageForTrimmedMean;
   trimAir, trimLand, trimDep = compute_trimmed_mean!(airValues, landValues, depValues, percentage)
   
   assign_trimmed_means_as_minimum_values!(matrixSectTime, dictPhaseSectorPosition,
