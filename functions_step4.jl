@@ -5,12 +5,27 @@ function create_rhs(DF_3droutes::DataFrame, parameters::Parameters)
   penlize_base_scenario!(matrixSectTime, dictPhaseSectorPosition, dictSectorAirports, parameters); 
   penalize_simulating_bad_weather!(matrixSectTime, dictSectorSectors, 
                         dictPhaseSectorPosition, dictSectorSectors, parameters); 
-  set_min_capacity!(matrixSectTime)
-  # DF_rhs = transform_matrix_to_data_frame();
-  # return DF_rhs;
+  set_min_capacity!(matrixSectTime);
+  DF_rhs = transform_matrix_to_data_frame(matrixSectTime, dictPhaseSectorPosition);
+  return DF_rhs;
 end
 
-# TODO: test these 2 new functions 
+function transform_matrix_to_data_frame(matrixSectTime::Array{Int,2},
+                                  dictPhaseSectorPosition::Dict{String, Int})
+    nRows, nCols = size(matrixSectTime)
+    df = DataFrame(name = repeat([""], inner = nRows*nCols),
+                   rhs  = zeros(Int, nRows*nCols))
+    row = 1
+    for (phaseSector, idx) in dictPhaseSectorPosition
+      for t in 1:nCols
+        df[row, :name] = phaseSector * "/" * string(t)
+        df[row, :rhs] = matrixSectTime[idx, t]
+        row += 1
+      end
+    end
+    return df
+end
+
 function set_min_capacity!(matrixSectTime::Array{Int,2})
   nRows, nCols = size(matrixSectTime)
   for j in nCols, i in nRows
