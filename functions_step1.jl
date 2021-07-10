@@ -1,7 +1,10 @@
-function remove_flights_in_non_contiguous_USA!(territoriesToDelete::Array{String,1},
-										  	  df_flights_raw::DataFrame)
-    contiguousUS = map(x -> x ∉ territoriesToDelte, df_flights_raw.OriginStateName);
+function remove_flights_in_non_contiguous_USA(territoriesToDelte::Array{String,1}, 
+											  df_flights_raw::DataFrame)
+	contiguousUSOrigin = map(x -> x ∉ territoriesToDelte, df_flights_raw.OriginStateName);
+	contiguousUSDest   = map(x -> x ∉ territoriesToDelte, df_flights_raw.DestStateName);
+    contiguousUS = contiguousUSOrigin .& contiguousUSDest;
     df_flights_raw = df_flights_raw[contiguousUS, :];
+	return df_flights_raw
 end
 
 function filter_observation_and_keep_only_useful_columns(df_flights_raw::DataFrame,
@@ -38,8 +41,8 @@ function clean_data_flights(df_flights_raw::DataFrame,
                             territoriesToDelete::Array{String,1}, 
                             df_airports_raw::DataFrame)::DataFrame
 
-	remove_flights_in_non_contiguous_USA!(territoriesToDelete, df_flights_raw);
-	df_flights = filter_observation_and_keep_only_useful_columns(df_flights_raw, weekday);
+	df_contiguous = remove_flights_in_non_contiguous_USA!(territoriesToDelete, df_flights_raw);
+	df_flights = filter_observation_and_keep_only_useful_columns(df_contiguous, weekday);
 	df_final = remove_flights_with_no_airport_in_the_data_set(df_airports_raw, df_flights);
     return df_final;
 end
