@@ -1,0 +1,7 @@
+"DayofMonth","Cancelled","Diverted","Tail_Number","OriginCityName","DestCityName","OriginAirportID","DestAirportID","DepTime","ArrTime","OriginStateName","DestStateName"
+12,0,0,"N945SW","FakeName","FakeName2",14698,14771,"1353","1444","California","California"
+12,1,0,"N945SW","FakeName","FakeName2",14698,14771,"1353","1444","California","California"
+12,0,1,"N945SW","FakeName","FakeName2",14698,14771,"1353","1444","California","California"
+12,0,0,"N945SW","FakeName","FakeName2",14698,14771,"1353","1444","Alaska","California"
+12,0,0,"N945SW","FakeName","FakeName2",14698,14771,"1353","1444","California","Alaska"
+12,0,0,"N945SW","FakeName","FakeName2",14698,14771,"1353","1444","Hawaii","California"
