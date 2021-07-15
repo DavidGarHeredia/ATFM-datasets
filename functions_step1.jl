@@ -47,28 +47,31 @@ function remove_flights_with_no_airport_in_the_data_set(df_airports_raw::DataFra
 	return df
 end
 
+function clean_data_airports(df_airports_raw::DataFrame, df_flights::DataFrame)
+	airports = get_set_airports_in_flight_df(df_flights);
+	df = remove_airports_not_in_flight_df(df_airports_raw, airports);
+    unique!(df, [:AIRPORT_ID]); # drop duplicates
+    return df;
+end
 
-function clean_data_airports(df_airports_raw::DataFrame, 
-                             df_flights::DataFrame)::DataFrame
-
-    # Remove airports not in the flight data frame    
+function get_set_airports_in_flight_df(df_flights::DataFrame)
     airports = BitSet();
-    sizehint!(airports, nrow(df_airports_raw));
     for r in eachrow(df_flights)
         push!(airports, r[:OriginAirportID]);
         push!(airports, r[:DestAirportID]);
     end
+	return airports
+end
 
+function remove_airports_not_in_flight_df(df_airports_raw::DataFrame, 
+										  airports::BitSet)
     df = df_airports_raw |>
         @filter(_.AIRPORT_ID in airports) |>
         @select(:AIRPORT_ID, :LATITUDE, :LONGITUDE) |>
         DataFrame;
-
-    # drop duplicates
-    unique!(df, [:AIRPORT_ID]); 
-
-    return df;
+	return df
 end
+
 
 
 function modify_data_flights!(df_flights::DataFrame)
