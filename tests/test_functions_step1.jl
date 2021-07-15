@@ -44,21 +44,21 @@ end
 
 @testset "clean_data_flights" begin
 	weekday = 5
-	df_final = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
+	df_cleaned_flights = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
 	@test nrow(df_flights) == 7
-	@test nrow(df_final)   == 2
-	@test df_final[1, :OriginAirportID] == 14698
-	@test df_final[1, :DestAirportID]   == 14771
-	@test df_final[2, :OriginAirportID] == 14771 
-	@test df_final[2, :DestAirportID]   == 10713
-	@test df_final[1, :Tail_Number] == "tail1"
-	@test df_final[2, :Tail_Number] == "tail4"
+	@test nrow(df_cleaned_flights)   == 2
+	@test df_cleaned_flights[1, :OriginAirportID] == 14698
+	@test df_cleaned_flights[1, :DestAirportID]   == 14771
+	@test df_cleaned_flights[2, :OriginAirportID] == 14771 
+	@test df_cleaned_flights[2, :DestAirportID]   == 10713
+	@test df_cleaned_flights[1, :Tail_Number] == "tail1"
+	@test df_cleaned_flights[2, :Tail_Number] == "tail4"
 end
 
 @testset "get_set_airports_in_flight_df" begin
 	weekday = 5
-	df_final = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
-	airports = get_set_airports_in_flight_df(df_final)
+	df_cleaned_flights = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
+	airports = get_set_airports_in_flight_df(df_cleaned_flights)
 	@test 10713 in airports
 	@test 14771 in airports
 	@test 14698 in airports
@@ -68,13 +68,25 @@ end
 
 @testset "remove_airports_not_in_flight_df_and_drop_some_columns" begin
 	weekday = 5
-	df_final = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
-	airports = get_set_airports_in_flight_df(df_final)
+	df_cleaned_flights = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
+	airports = get_set_airports_in_flight_df(df_cleaned_flights)
 	df_airports_after_remove = remove_airports_not_in_flight_df_and_drop_some_columns(df_airports, airports);
 	@test ncol(df_airports_after_remove) == 3
 	@test nrow(df_airports_after_remove) == 6
 	airports_in_df = Set(df_airports_after_remove.AIRPORT_ID)
 	@test length(airports_in_df) == 3
+	@test 10713 in airports_in_df
+	@test 14771 in airports_in_df
+	@test 14698 in airports_in_df
+end
+
+@testset "clean_data_airports" begin
+	weekday = 5
+	df_cleaned_flights = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
+	df_cleaned_airports = clean_data_airports(df_airports, df_cleaned_flights)
+	@test ncol(df_cleaned_airports) == 3
+	@test nrow(df_cleaned_airports) == 3
+	airports_in_df = Set(df_cleaned_airports.AIRPORT_ID)
 	@test 10713 in airports_in_df
 	@test 14771 in airports_in_df
 	@test 14698 in airports_in_df
