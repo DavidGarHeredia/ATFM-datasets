@@ -91,3 +91,23 @@ end
 	@test 14771 in airports_in_df
 	@test 14698 in airports_in_df
 end
+
+@testset "transform_time_to_minutes" begin
+	
+end
+
+@testset "assign_new_tail_number_to_missing_connections" begin
+	
+end
+
+@testset "convert_tail_to_integer_and_add_index_of_previous_flight" begin
+	
+end
+
+@testset "correct_time_incoherences" begin
+	
+end
+
+@testset "modify_data_flights" begin
+	
+end
