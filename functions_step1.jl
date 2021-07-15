@@ -3,7 +3,7 @@ function clean_data_flights(df_flights_raw::DataFrame,
                             territoriesToDelete::Array{String,1}, 
                             df_airports_raw::DataFrame)::DataFrame
 
-	df_contiguous = remove_flights_in_non_contiguous_USA!(territoriesToDelete, df_flights_raw);
+	df_contiguous = remove_flights_in_non_contiguous_USA(territoriesToDelete, df_flights_raw);
 	df_filtered = filter_observation_and_keep_only_useful_columns(df_contiguous, weekday);
 	df_final = remove_flights_with_no_airport_in_the_data_set(df_airports_raw, df_filtered);
     return df_final;

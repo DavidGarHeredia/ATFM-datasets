@@ -11,7 +11,7 @@ territoriesToDelte = ["Alaska", "Hawaii"];
 @test nrow(df_flights) == 7
 
 @testset "remove_flights_in_non_contiguous_USA" begin
-	df_contiguous = remove_flights_in_non_contiguous_USA!(territoriesToDelte, df_flights)
+	df_contiguous = remove_flights_in_non_contiguous_USA(territoriesToDelte, df_flights)
 	@test nrow(df_flights) == 7
 	@test nrow(df_contiguous) == 4
 	@test df_contiguous[1, :OriginStateName] == "California"
