@@ -73,7 +73,6 @@ function remove_airports_not_in_flight_df_and_drop_some_columns(df_airports_raw:
 end
 
 
-
 function modify_data_flights!(df_flights::DataFrame)
     transform_time_to_minutes!(df_flights);
     assign_new_tail_number_to_missing_connections!(df_flights);
@@ -82,7 +81,7 @@ function modify_data_flights!(df_flights::DataFrame)
     insertcols!(df_flights, :seq => -1);# seq will contain the flight index of the previous flight (if any)
 
     convert_tail_to_integer_and_add_index_of_previous_flight!(df_flights);
-    correcting_time_incoherences!(df_flights);
+    correct_time_incoherences(df_flights);
 end
 
 function transform_time_to_minutes!(df_flights::DataFrame)
@@ -136,7 +135,7 @@ function convert_tail_to_integer_and_add_index_of_previous_flight!(df_flights::D
     df_flights.Tail_Number = parse.(Int, df_flights.Tail_Number);
 end
 
-function correcting_time_incoherences!(df_flights::DataFrame)
+function correct_time_incoherences(df_flights::DataFrame)
   for i in 2:nrow(df_flights)
     if df_flights[i, :seq] != -1
       if df_flights[i, :DepTime] <= df_flights[i-1, :ArrTime]
@@ -146,20 +145,33 @@ function correcting_time_incoherences!(df_flights::DataFrame)
   end
 end
 
+"""
+	test_df_flights
+
+This method tests that the final data frame of containing the flights
+does not have clear mistakes
+"""
 function test_df_flights(df_flights::DataFrame)
   for i in 2:nrow(df_flights)
     if df_flights[i, :seq] == -1
       if df_flights[i, :Tail_Number] == df_flights[i-1, :Tail_Number]
+		# seq = -1 implies first flight of the sequence. However, the previos flight
+		# has the same tail number => ERROR
         println("Error in seq = -1 for row ", i);
       end
-    else 
+    else  # The flight is a continued one
       if df_flights[i, :seq] != df_flights[i-1, :flight]
+		# The the predecessor flight info in seq does not match with the flight info
+		# of the previos flight
         println("Error in seq != flight in row", i);
       end
       if df_flights[i, :OriginAirportID] != df_flights[i-1, :DestAirportID]
+		# The origin airport does not match with the destination airport of 
+		# the predecessor flight
         println("Error in origin != destination in row", i);
       end
       if df_flights[i, :DepTime] <= df_flights[i-1, :ArrTime]
+		# The departure time is earlier than the arrival time of the predecessor flight
         println("Error: dep Time <= arr time  in row", i, " ", df_flights[i, :DepTime], " ", df_flights[i-1, :ArrTime]);
       end
     end
