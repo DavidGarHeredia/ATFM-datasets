@@ -148,7 +148,7 @@ end
 """
 	test_df_flights
 
-This method tests that the final data frame of containing the flights
+This method tests that the final data frame containing the flights
 does not have clear mistakes
 """
 function test_df_flights(df_flights::DataFrame)
