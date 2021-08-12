@@ -94,7 +94,7 @@ function transform_time_to_minutes!(df_flights::DataFrame)
 end
 
 function assign_new_tail_number_to_missing_connections!(df_flights::DataFrame)
-	idxMissingConnections = get_missing_connections(df_flights)
+	idxMissingConnections = get_missing_connections!(df_flights)
 	nFlights = nrow(df_flights)
     for i in 1:length(idxMissingConnections)
  	    idxMissingFlight = idxMissingConnections[i];
@@ -129,7 +129,7 @@ function get_index_next_missing_flight(i::Int,
 	end
 end
 
-function get_missing_connections(df_flights::DataFrame)
+function get_missing_connections!(df_flights::DataFrame)
     missingConnection = Int[];
     sort!(df_flights, [:Tail_Number, :DepTime]);
     aircraft = df_flights[1, :Tail_Number];
@@ -158,7 +158,6 @@ function is_the_flight_connected_to_its_predecessor(idxCurrentFlight::Int,
 end
 
 function convert_tail_to_integer_and_add_index_of_previous_flight!(df_flights::DataFrame)
-    # Change tail number to integer and set correct value
     tailNum  = unique(df_flights.Tail_Number);
     aircraft = Dict(tailNum[i] => string(i) for i = 1:length(tailNum));
     tail = df_flights[1, :Tail_Number];
