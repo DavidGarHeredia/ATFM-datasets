@@ -187,7 +187,7 @@ end
 	test_df_flights
 
 This method tests that the final data frame containing the flights
-does not have clear mistakes
+does not have obvious mistakes
 """
 function test_df_flights(df_flights::DataFrame)
   for i in 2:nrow(df_flights)
