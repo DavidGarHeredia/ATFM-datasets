@@ -102,6 +102,14 @@ end
 	@test df_cleaned_flights[2,:ArrTime] == 14*60 + 44
 end
 
+@testset "get_missing_connections" begin
+	
+end
+
+@testset "repair_connection" begin
+	
+end
+
 @testset "assign_new_tail_number_to_missing_connections" begin
 	
 end
