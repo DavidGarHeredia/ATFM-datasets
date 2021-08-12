@@ -93,7 +93,13 @@ end
 end
 
 @testset "transform_time_to_minutes" begin
-	
+	weekday = 5
+	df_cleaned_flights = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
+	transform_time_to_minutes!(df_cleaned_flights)
+	@test df_cleaned_flights[1,:DepTime] == 13*60 + 53
+	@test df_cleaned_flights[1,:ArrTime] == 14*60 + 44
+	@test df_cleaned_flights[2,:DepTime] == 13*60 + 53
+	@test df_cleaned_flights[2,:ArrTime] == 14*60 + 44
 end
 
 @testset "assign_new_tail_number_to_missing_connections" begin
