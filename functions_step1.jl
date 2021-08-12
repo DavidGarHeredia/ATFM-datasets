@@ -85,8 +85,10 @@ function modify_data_flights!(df_flights::DataFrame)
 end
 
 function transform_time_to_minutes!(df_flights::DataFrame)
-    df_flights.DepTime = parse.(Int, df_flights.DepTime);
-    df_flights.ArrTime = parse.(Int, df_flights.ArrTime);
+	if typeof(df_flights[1,:DepTime]) == String
+    	df_flights.DepTime = parse.(Int, df_flights.DepTime);
+    	df_flights.ArrTime = parse.(Int, df_flights.ArrTime);
+	end
     df_flights.DepTime = 60 * div.(df_flights.DepTime, 100) + df_flights.DepTime .% 100;
     df_flights.ArrTime = 60 * div.(df_flights.ArrTime, 100) + df_flights.ArrTime .% 100;
 end
