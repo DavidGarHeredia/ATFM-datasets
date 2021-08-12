@@ -64,7 +64,7 @@ function get_set_airports_in_flight_df(df_flights::DataFrame)
 end
 
 function remove_airports_not_in_flight_df_and_drop_some_columns(df_airports_raw::DataFrame, 
-										  airports::BitSet)
+										  						airports::BitSet)
     df = df_airports_raw |>
         @filter(_.AIRPORT_ID in airports) |>
         @select(:AIRPORT_ID, :LATITUDE, :LONGITUDE) |>
@@ -81,7 +81,7 @@ function modify_data_flights!(df_flights::DataFrame)
     insertcols!(df_flights, :seq => -1);# seq will contain the flight index of the previous flight (if any)
 
     convert_tail_to_integer_and_add_index_of_previous_flight!(df_flights);
-    correct_time_incoherences(df_flights);
+    correct_time_incoherences!(df_flights);
 end
 
 function transform_time_to_minutes!(df_flights::DataFrame)
@@ -94,30 +94,67 @@ function transform_time_to_minutes!(df_flights::DataFrame)
 end
 
 function assign_new_tail_number_to_missing_connections!(df_flights::DataFrame)
-    # See if there is any connection missing
-    missingConnnection = Int[];
+	idxMissingConnections = get_missing_connections(df_flights)
+	nFlights = nrow(df_flights)
+    for i in 1:length(idxMissingConnections)
+ 	    idxMissingFlight = idxMissingConnections[i];
+ 	    idxNextMissingFlight = get_index_next_missing_flight(i, nFlights, idxMissingConnections)
+		repair_connection!(i, idxMissingFlight, idxNextMissingFlight, df_flights)
+    end
+end
+
+function repair_connection!(i::Int, 
+							idxMissingFlight::Int, 
+							idxNextMissingFlight::Int, 
+							df_flights::DataFrame)
+ 	tail = df_flights[idxMissingFlight, :Tail_Number];
+	idx = idxMissingFlight
+	flights_belong_to_the_same_aircraft = df_flights[idx, :Tail_Number] == tail
+	next_flight_is_not_the_next_missing_one = idx < idxNextMissingFlight
+    while flights_belong_to_the_same_aircraft && next_flight_is_not_the_next_missing_one
+		df_flights[idx, :Tail_Number] = "aircraft" * string(i);
+		idx += 1;
+		flights_belong_to_the_same_aircraft = df_flights[idx, :Tail_Number] == tail
+		next_flight_is_not_the_next_missing_one = idx < idxNextMissingFlight
+    end
+end
+
+function get_index_next_missing_flight(i::Int, 
+									   nFlights::Int, 
+									   idxMissingConnections::Array{Int,1})
+	if i < length(idxMissingConnections) 
+		return idxMissingConnections[i+1] 
+	else 
+		return nFlights;
+	end
+end
+
+function get_missing_connections(df_flights::DataFrame)
+    missingConnection = Int[];
     sort!(df_flights, [:Tail_Number, :DepTime]);
-    tail = df_flights[1, :Tail_Number];
-    for i in 2:nrow(df_flights)
-        if tail == df_flights[i, :Tail_Number]
-            if df_flights[i, :OriginAirportID] != df_flights[i-1, :DestAirportID]
-                push!(missingConnnection, i);
+    aircraft = df_flights[1, :Tail_Number];
+    for idxFlight in 2:nrow(df_flights)
+        if is_the_flight_operated_by_the_current_aircraft(aircraft, idxFlight, df_flights)
+            if is_the_flight_connected_to_its_predecessor(idxFlight, df_flights) == false
+                push!(missingConnection, idxFlight);
             end
         else
-            tail = df_flights[i, :Tail_Number];
+            aircraft = df_flights[idxFlight, :Tail_Number];
         end
     end
+end
 
-    # Assign new tail number to missing connections
-    for i in 1:length(missingConnnection)
-    	flight = missingConnnection[i];
-      tail = df_flights[flight, :Tail_Number];
-      n = i < length(missingConnnection) ? missingConnnection[i+1] : nrow(df_flights);
-    	while df_flights[flight, :Tail_Number] == tail && flight < n
-		    df_flights[flight, :Tail_Number] = "aircraft" * string(i);
-		    flight += 1;
-    	end
-    end
+function is_the_flight_operated_by_the_current_aircraft(tail::Int, 
+													    currentFlight::Int, 
+													    df_flights::DataFrame)
+	return tail == df_flights[currentFlight, :Tail_Number]
+end
+
+function is_the_flight_connected_to_its_predecessor(idxCurrentFlight::Int, 
+													df_flights::DataFrame)
+	depAirportCurrentFlight  = df_flights[idxCurrentFlight, :OriginAirportID] 
+	arrAirportPreviousFlight = df_flights[idxCurrentFlight-1, :DestAirportID]
+	return depAirportCurrentFlight == arrAirportPreviousFlight
 end
 
 function convert_tail_to_integer_and_add_index_of_previous_flight!(df_flights::DataFrame)
@@ -137,7 +174,7 @@ function convert_tail_to_integer_and_add_index_of_previous_flight!(df_flights::D
     df_flights.Tail_Number = parse.(Int, df_flights.Tail_Number);
 end
 
-function correct_time_incoherences(df_flights::DataFrame)
+function correct_time_incoherences!(df_flights::DataFrame)
   for i in 2:nrow(df_flights)
     if df_flights[i, :seq] != -1
       if df_flights[i, :DepTime] <= df_flights[i-1, :ArrTime]
