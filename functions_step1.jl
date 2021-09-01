@@ -130,21 +130,22 @@ function get_index_next_missing_flight(i::Int,
 end
 
 function get_missing_connections!(df_flights::DataFrame)
-    missingConnection = Int[];
+    missingConnections = Int[];
     sort!(df_flights, [:Tail_Number, :DepTime]);
     aircraft = df_flights[1, :Tail_Number];
     for idxFlight in 2:nrow(df_flights)
         if is_the_flight_operated_by_the_current_aircraft(aircraft, idxFlight, df_flights)
             if is_the_flight_connected_to_its_predecessor(idxFlight, df_flights) == false
-                push!(missingConnection, idxFlight);
+                push!(missingConnections, idxFlight);
             end
         else
             aircraft = df_flights[idxFlight, :Tail_Number];
         end
     end
+	return missingConnections
 end
 
-function is_the_flight_operated_by_the_current_aircraft(tail::Int, 
+function is_the_flight_operated_by_the_current_aircraft(tail::String, 
 													    currentFlight::Int, 
 													    df_flights::DataFrame)
 	return tail == df_flights[currentFlight, :Tail_Number]
