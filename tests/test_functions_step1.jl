@@ -154,13 +154,71 @@ end
 end
 
 @testset "convert_tail_to_integer_and_add_index_of_previous_flight" begin
-	
+	weekday = 5
+	df_cleaned_flights  = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
+	add_fake_flights_to_test_connections!(df_cleaned_flights)
+    transform_time_to_minutes!(df_cleaned_flights);
+	assign_new_tail_number_to_missing_connections!(df_cleaned_flights)
+    insertcols!(df_cleaned_flights, :flight => 1:nrow(df_cleaned_flights));
+    insertcols!(df_cleaned_flights, :seq => -1);
+    convert_tail_to_integer_and_add_index_of_previous_flight!(df_cleaned_flights);
+	@test df_cleaned_flights[1,:Tail_Number] == 1
+	@test df_cleaned_flights[2,:Tail_Number] == 2
+	@test df_cleaned_flights[3,:Tail_Number] == 2
+	@test df_cleaned_flights[4,:Tail_Number] == 3
+	@test df_cleaned_flights[5,:Tail_Number] == 3
+	@test df_cleaned_flights[6,:Tail_Number] == 3
+	@test df_cleaned_flights[1,:seq] == -1
+	@test df_cleaned_flights[2,:seq] == -1
+	@test df_cleaned_flights[3,:seq] == 2
+	@test df_cleaned_flights[4,:seq] == -1
+	@test df_cleaned_flights[5,:seq] == 4
+	@test df_cleaned_flights[6,:seq] == 5
+	@test df_cleaned_flights[1,:flight] == 1
+	@test df_cleaned_flights[2,:flight] == 2
+	@test df_cleaned_flights[3,:flight] == 3
+	@test df_cleaned_flights[4,:flight] == 4
+	@test df_cleaned_flights[5,:flight] == 5
+	@test df_cleaned_flights[6,:flight] == 6
 end
 
 @testset "correct_time_incoherences" begin
-	
+	weekday = 5
+	df_cleaned_flights  = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
+	add_fake_flights_to_test_connections!(df_cleaned_flights)
+    transform_time_to_minutes!(df_cleaned_flights);
+	assign_new_tail_number_to_missing_connections!(df_cleaned_flights)
+    insertcols!(df_cleaned_flights, :flight => 1:nrow(df_cleaned_flights));
+    insertcols!(df_cleaned_flights, :seq => -1);
+    convert_tail_to_integer_and_add_index_of_previous_flight!(df_cleaned_flights);
+	df_cleaned_flights[3,:DepTime] = 910 
+	df_cleaned_flights[5,:DepTime] = 883
+	correct_time_incoherences!(df_cleaned_flights)
+	@test df_cleaned_flights[3,:DepTime] == 950 
+	@test df_cleaned_flights[5,:DepTime] == 914
 end
 
 @testset "modify_data_flights" begin
-	
+	weekday = 5
+	df_cleaned_flights  = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
+	add_fake_flights_to_test_connections!(df_cleaned_flights)
+	modify_data_flights!(df_cleaned_flights)
+	@test df_cleaned_flights[1,:Tail_Number] == 1
+	@test df_cleaned_flights[2,:Tail_Number] == 2
+	@test df_cleaned_flights[3,:Tail_Number] == 2
+	@test df_cleaned_flights[4,:Tail_Number] == 3
+	@test df_cleaned_flights[5,:Tail_Number] == 3
+	@test df_cleaned_flights[6,:Tail_Number] == 3
+	@test df_cleaned_flights[1,:seq] == -1
+	@test df_cleaned_flights[2,:seq] == -1
+	@test df_cleaned_flights[3,:seq] == 2
+	@test df_cleaned_flights[4,:seq] == -1
+	@test df_cleaned_flights[5,:seq] == 4
+	@test df_cleaned_flights[6,:seq] == 5
+	@test df_cleaned_flights[1,:flight] == 1
+	@test df_cleaned_flights[2,:flight] == 2
+	@test df_cleaned_flights[3,:flight] == 3
+	@test df_cleaned_flights[4,:flight] == 4
+	@test df_cleaned_flights[5,:flight] == 5
+	@test df_cleaned_flights[6,:flight] == 6
 end
