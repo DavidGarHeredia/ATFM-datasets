@@ -138,12 +138,12 @@ function repair_connection!(i::Int,
 							df_flights::DataFrame)
  	tail = df_flights[idxMissingFlight, :Tail_Number];
 	idx = idxMissingFlight
-	flights_belong_to_the_same_aircraft = df_flights[idx, :Tail_Number] == tail
+	flights_share_aircraft = is_the_flight_operated_by_the_current_aircraft(tail, idx, df_flights)
 	next_flight_is_not_the_next_missing_one = idx < idxNextMissingFlight
-    while flights_belong_to_the_same_aircraft && next_flight_is_not_the_next_missing_one
+    while flights_share_aircraft && next_flight_is_not_the_next_missing_one
 		df_flights[idx, :Tail_Number] = "aircraft" * string(i);
 		idx += 1;
-		flights_belong_to_the_same_aircraft = df_flights[idx, :Tail_Number] == tail
+		flights_share_aircraft = is_the_flight_operated_by_the_current_aircraft(tail, idx, df_flights)
 		next_flight_is_not_the_next_missing_one = idx < idxNextMissingFlight
     end
 end
