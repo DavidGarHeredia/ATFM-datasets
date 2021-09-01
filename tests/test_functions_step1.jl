@@ -102,8 +102,26 @@ end
 	@test df_cleaned_flights[2,:ArrTime] == 14*60 + 44
 end
 
+function add_fake_flights_to_test_connections!(df_flights::DataFrame)
+	df_fake = DataFrame(Tail_Number = ["tail1", "tail1", "tail4", "tail4"],
+						OriginCityName = ["XXX", "YYY", "Boise, ID", "ZZZ"],
+						DestCityName = ["YYY", "VVV", "ZZZ", "DDD"],
+						OriginAirportID = [14772, 14773, 10713, 10714],
+						DestAirportID = [14773, 14774, 10714, 10715],
+						DepTime = [1444, 1544, 1544, 1644],
+						ArrTime = [1520, 1620, 1620, 1720]
+						)
+	append!(df_flights, df_fake)
+end
+
 @testset "get_missing_connections" begin
-	
+	weekday = 5
+	df_cleaned_flights  = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
+	df_cleaned_airports = clean_data_airports(df_airports, df_cleaned_flights)
+	add_fake_flights_to_test_connections!(df_cleaned_flights)
+	missingConnections = get_missing_connections!(df_cleaned_flights)
+	@test length(missingConnections) == 1
+	@test missingConnections[1] == 2
 end
 
 @testset "repair_connection" begin
