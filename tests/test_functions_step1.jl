@@ -141,7 +141,16 @@ end
 end
 
 @testset "assign_new_tail_number_to_missing_connections" begin
-	
+	weekday = 5
+	df_cleaned_flights  = clean_data_flights(df_flights, weekday, territoriesToDelte, df_airports)
+	add_fake_flights_to_test_connections!(df_cleaned_flights)
+	assign_new_tail_number_to_missing_connections!(df_cleaned_flights)
+	@test df_cleaned_flights[1,:Tail_Number] == "tail1"
+	@test df_cleaned_flights[2,:Tail_Number] == "aircraft1"
+	@test df_cleaned_flights[3,:Tail_Number] == "aircraft1"
+	@test df_cleaned_flights[4,:Tail_Number] == "tail4"
+	@test df_cleaned_flights[5,:Tail_Number] == "tail4"
+	@test df_cleaned_flights[6,:Tail_Number] == "tail4"
 end
 
 @testset "convert_tail_to_integer_and_add_index_of_previous_flight" begin
