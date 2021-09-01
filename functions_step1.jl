@@ -103,32 +103,6 @@ function assign_new_tail_number_to_missing_connections!(df_flights::DataFrame)
     end
 end
 
-function repair_connection!(i::Int, 
-							idxMissingFlight::Int, 
-							idxNextMissingFlight::Int, 
-							df_flights::DataFrame)
- 	tail = df_flights[idxMissingFlight, :Tail_Number];
-	idx = idxMissingFlight
-	flights_belong_to_the_same_aircraft = df_flights[idx, :Tail_Number] == tail
-	next_flight_is_not_the_next_missing_one = idx < idxNextMissingFlight
-    while flights_belong_to_the_same_aircraft && next_flight_is_not_the_next_missing_one
-		df_flights[idx, :Tail_Number] = "aircraft" * string(i);
-		idx += 1;
-		flights_belong_to_the_same_aircraft = df_flights[idx, :Tail_Number] == tail
-		next_flight_is_not_the_next_missing_one = idx < idxNextMissingFlight
-    end
-end
-
-function get_index_next_missing_flight(i::Int, 
-									   nFlights::Int, 
-									   idxMissingConnections::Array{Int,1})
-	if i < length(idxMissingConnections) 
-		return idxMissingConnections[i+1] 
-	else 
-		return nFlights;
-	end
-end
-
 function get_missing_connections!(df_flights::DataFrame)
     missingConnections = Int[];
     sort!(df_flights, [:Tail_Number, :DepTime]);
@@ -156,6 +130,32 @@ function is_the_flight_connected_to_its_predecessor(idxCurrentFlight::Int,
 	depAirportCurrentFlight  = df_flights[idxCurrentFlight, :OriginAirportID] 
 	arrAirportPreviousFlight = df_flights[idxCurrentFlight-1, :DestAirportID]
 	return depAirportCurrentFlight == arrAirportPreviousFlight
+end
+
+function repair_connection!(i::Int, 
+							idxMissingFlight::Int, 
+							idxNextMissingFlight::Int, 
+							df_flights::DataFrame)
+ 	tail = df_flights[idxMissingFlight, :Tail_Number];
+	idx = idxMissingFlight
+	flights_belong_to_the_same_aircraft = df_flights[idx, :Tail_Number] == tail
+	next_flight_is_not_the_next_missing_one = idx < idxNextMissingFlight
+    while flights_belong_to_the_same_aircraft && next_flight_is_not_the_next_missing_one
+		df_flights[idx, :Tail_Number] = "aircraft" * string(i);
+		idx += 1;
+		flights_belong_to_the_same_aircraft = df_flights[idx, :Tail_Number] == tail
+		next_flight_is_not_the_next_missing_one = idx < idxNextMissingFlight
+    end
+end
+
+function get_index_next_missing_flight(i::Int, 
+									   nFlights::Int, 
+									   idxMissingConnections::Array{Int,1})
+	if i < length(idxMissingConnections) 
+		return idxMissingConnections[i+1] 
+	else 
+		return nFlights;
+	end
 end
 
 function convert_tail_to_integer_and_add_index_of_previous_flight!(df_flights::DataFrame)
