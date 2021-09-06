@@ -46,7 +46,7 @@ function assign_sectors_to_airports!(DF_airports::DataFrame,
                                      Δrow::Float64)
   	posNewColumn = ncol(DF_airports) + 1;
   	# The map is a grid, so each airport will be assigned as a sector the number of
-  	# the grid where it is. This is computed as follows: 
+  	# the grid where it is. Sector 0 = (xmin, ymax). Sector 1 = (xmin+Δcol, ymax). Thus:
   	sectorOfEachAirport = floor.(Int, (DF_airports[!, :LONGITUDE] .- xmin)/Δcol) +
   	   		input.I_numCol*(ceil.(Int, (ymax .- DF_airports[!, :LATITUDE])/Δrow) .- 1);
 
