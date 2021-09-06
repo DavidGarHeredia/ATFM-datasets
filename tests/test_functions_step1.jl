@@ -1,4 +1,3 @@
-using Base: close_chnl_on_taskdone
 
 using Test
 using Queryverse
