@@ -4,7 +4,7 @@ struct Point
     y::Float64;
 end
 
-function create_sector_and_route_information!(input::Input, DF_airports::DataFrame)
+function create_sector_and_route_information!(input, DF_airports::DataFrame)
   	# Aiports
   	xmin, xmax, ymin, ymax = get_extreme_points(DF_airports);
   	Δcol = (xmax - xmin)/input.I_numCol; # size of each column in the grid
@@ -39,7 +39,7 @@ function get_extreme_points(DF_airports::DataFrame)
 end
 
 function assign_sectors_to_airports!(DF_airports::DataFrame, 
-                                     input::Input, 
+                                     input, 
                                      xmin::Float64, 
                                      Δcol::Float64, 
                                      ymax::Float64, 
@@ -54,7 +54,7 @@ function assign_sectors_to_airports!(DF_airports::DataFrame,
   	return nothing;
 end
 
-function create_coordinates_inner_nodes(input::Input, 
+function create_coordinates_inner_nodes(input, 
                                         xmin::Float64, 
                                         xmax::Float64, 
                                         ymax::Float64, 
@@ -96,7 +96,7 @@ function create_coordinates_inner_nodes(input::Input,
   	return pointsMiddle;
 end
 
-function create_graph_of_routes(input::Input, 
+function create_graph_of_routes(input, 
                                 DF_airports::DataFrame, 
                                 pointsMiddle::Array{Point, 1}, 
                                 Δrow::Float64, 
@@ -129,7 +129,7 @@ function create_empty_graph(nMiddlePoints::Int)
   	return DF_graph;
 end
 
-function fill_df_graph_with_connections!(input::Input, 
+function fill_df_graph_with_connections!(input, 
                                          DF_graph::DataFrame, 
                                          pointsMiddle::Array{Point,1}, 
                                          Δrow::Float64, 
