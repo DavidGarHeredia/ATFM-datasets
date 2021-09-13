@@ -64,7 +64,7 @@ function create_coordinates_inner_nodes(input,
   	# will be divided into sectors of size: Δcol × Δrow.
   	# For each sector, we will have 9 points: 4 in the vertexes, 4 in the edges and
   	# 1 in the middle. This part of the code is for the latter. 
-  	# Check next Fig (representing 1 sector), where '*' are the points:
+  	# Check the next Fig (representing 1 sector), where '*' are the points:
   
   	#   *----*----*
   	#   |---------|
@@ -72,15 +72,16 @@ function create_coordinates_inner_nodes(input,
   	#   |---------|
   	#   *----*----*
   
-  	# Notice that the 8 outer nodes connect the sector with other sectors,
+  	# Notice that the 8 outer nodes connect the sector with the adjacency sectors,
   	# while the inner node is to simulate more realistic routes inside the sector.
-  	# The outer nodes are only connected with the inner node of the corresponding
-  	# sector so the routes that will be obtained are not in the edges of the sectors.
+  	# Inside a sector, the outer nodes are only connected with the inner node. 
+	# Thus no route in the edges/boundaries of a sector is created.
   
+	# NOTE: check tests for a different way of computing these values (maybe it is easier to understand there)
   	nPointsCol    = 2*input.I_numCol + 1; # number of points in any row
   	nMiddlePoints = input.I_numCol*input.I_numRow; # number of middle points (1 per sector)
   	pointsMiddle  = Array{Point, 1}(undef, nMiddlePoints); # vector to fill with the middle points
-  
+
   	Δ      = 2*nPointsCol;     # if node K is in pos (i,j), then K + Δ is in (i+1, j)
   	point0 = 2 + nPointsCol;   # node number of the first middle (inner) node
   	pointF = 2*nPointsCol - 1; # node number of the last middle (inner) node in the same row that point0
