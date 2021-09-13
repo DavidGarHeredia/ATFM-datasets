@@ -73,3 +73,31 @@ end
 	@test df_cleaned_airports[2, :sector] == 366
 	@test df_cleaned_airports[3, :sector] == 37
 end
+
+@testset "create_coordinates_inner_nodes" begin
+	xmin, xmax, ymin, ymax = get_extreme_points(df_cleaned_airports);
+	Δcol = (xmax - xmin)/input.I_numCol; 
+  	Δrow = (ymax - ymin)/input.I_numRow; 
+  	Δcol = Δcol/2; 
+  	Δrow = Δrow/2; 
+  	pointsMiddle = create_coordinates_inner_nodes(input, xmin, xmax, ymax, Δrow, Δcol);
+    @test length(pointsMiddle) == input.I_numCol * input.I_numRow
+
+    first_x_point = xmin + Δcol
+    first_y_point = ymax - Δrow
+	nodeId = 0 # label of the first node
+    nPointsInRow = 2*input.I_numCol + 1
+    for row in 1:input.I_numRow
+        nodeId += nPointsInRow
+        for col in 1:input.I_numCol
+            idx = col + input.I_numCol*(row-1)
+			nodeId += 2 # move to the next column
+            xValue = first_x_point + 2*Δcol*(col-1)
+            yValue = first_y_point - 2*Δrow*(row-1)
+            @test pointsMiddle[idx].x == xValue
+            @test pointsMiddle[idx].y == yValue
+            @test pointsMiddle[idx].node == nodeId
+        end
+        nodeId += 1 # to put ourselves in the last point of the row
+    end
+end
