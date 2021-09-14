@@ -77,7 +77,7 @@ function create_coordinates_inner_nodes(input,
   	# Inside a sector, the outer nodes are only connected with the inner node. 
 	# Thus no route in the edges/boundaries of a sector is created.
   
-	# NOTE: check tests for a different way of computing these values (maybe it is easier to understand there)
+	# NOTE: check tests for an alternative way for this function (maybe it is easier to understand there)
   	nPointsCol    = 2*input.I_numCol + 1; # number of points in any row
   	nMiddlePoints = input.I_numCol*input.I_numRow; # number of middle points (1 per sector)
   	pointsMiddle  = Array{Point, 1}(undef, nMiddlePoints); # vector to fill with the middle points
@@ -148,36 +148,36 @@ function fill_df_graph_with_connections!(input,
   
   	# Connection of points 
   	nPointsCol = 2*input.I_numCol + 1; # number of points in any row
-  	I_counter  = 0; # for the number of arc
-  	I_counter2 = 0; # for the number of sector
+  	idxArc = 0; 
+  	idxSector = 0; 
   	for p in pointsMiddle
-  	    sector = "S" * string(I_counter2);
+  	    sector = "S" * string(idxSector);
   	    vectPoints = Array{Point, 1}(); # to feed the dictionary
   	    # Arcs (e,b) and (e,h)
-  	    DF_graph[I_counter + 1, :] .= (I_counter, p.node, p.node - nPointsCol, costΔrow, sector);
+  	    DF_graph[idxArc + 1, :] .= (idxArc, p.node, p.node - nPointsCol, costΔrow, sector);
   	    push!(vectPoints, Point(p.node - nPointsCol, p.x, p.y + Δrow)); # '+' because I go up
-  	    DF_graph[I_counter + 2, :] .= (I_counter + 1, p.node, p.node + nPointsCol, costΔrow, sector);
+  	    DF_graph[idxArc + 2, :] .= (idxArc + 1, p.node, p.node + nPointsCol, costΔrow, sector);
   	    push!(vectPoints, Point(p.node + nPointsCol, p.x, p.y - Δrow)); # '-' because I go down
   
   	    # Arcs (e,c), (e,i), (e,f)
-  	    DF_graph[I_counter + 3, :] .= (I_counter + 2, p.node, p.node - nPointsCol + 1, D_dist, sector);
+  	    DF_graph[idxArc + 3, :] .= (idxArc + 2, p.node, p.node - nPointsCol + 1, D_dist, sector);
   	    push!(vectPoints, Point(p.node - nPointsCol + 1, p.x + Δcol, p.y + Δrow));
-  	    DF_graph[I_counter + 4, :] .= (I_counter + 3, p.node, p.node + nPointsCol + 1, D_dist, sector);
+  	    DF_graph[idxArc + 4, :] .= (idxArc + 3, p.node, p.node + nPointsCol + 1, D_dist, sector);
   	    push!(vectPoints, Point(p.node + nPointsCol + 1, p.x + Δcol, p.y - Δrow));
-  	    DF_graph[I_counter + 5, :] .= (I_counter + 4, p.node, p.node + 1, costΔcol, sector);
+  	    DF_graph[idxArc + 5, :] .= (idxArc + 4, p.node, p.node + 1, costΔcol, sector);
   	    push!(vectPoints, Point(p.node + 1, p.x + Δcol, p.y));
   
   	    # Arcs (e,a), (e,g), (e,d)
-  	    DF_graph[I_counter + 6, :] .= (I_counter + 5, p.node, p.node - nPointsCol - 1, D_dist, sector);
+  	    DF_graph[idxArc + 6, :] .= (idxArc + 5, p.node, p.node - nPointsCol - 1, D_dist, sector);
   	    push!(vectPoints, Point(p.node - nPointsCol - 1, p.x - Δcol, p.y + Δrow));
-  	    DF_graph[I_counter + 7, :] .= (I_counter + 6, p.node, p.node + nPointsCol - 1, D_dist, sector);
+  	    DF_graph[idxArc + 7, :] .= (idxArc + 6, p.node, p.node + nPointsCol - 1, D_dist, sector);
   	    push!(vectPoints, Point(p.node + nPointsCol - 1, p.x - Δcol, p.y - Δrow));
-  	    DF_graph[I_counter + 8, :] .= (I_counter + 7, p.node, p.node - 1, costΔcol, sector);
+  	    DF_graph[idxArc + 8, :] .= (idxArc + 7, p.node, p.node - 1, costΔcol, sector);
   	    push!(vectPoints, Point(p.node - 1, p.x - Δcol, p.y));
   
-  	    dictSectorPoints[I_counter2] = vectPoints;
-  	    I_counter  += 8;
-  	    I_counter2 += 1;
+  	    dictSectorPoints[idxSector] = vectPoints;
+  	    idxArc  += 8;
+  	    idxSector += 1;
   	end
 
   	return dictSectorPoints;
